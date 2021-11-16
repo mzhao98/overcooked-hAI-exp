@@ -50,4 +50,4 @@ launch_in_sandbox_mode = true
 #   https://<host>:<port>/ad 
 
 use_psiturk_ad_server = false
-ad_location = https://nameless-fjord-92835.herokuapp.com/ad
+ad_location = https://nameless-fjord-92835.herokuapp.com/pub
