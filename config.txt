@@ -16,7 +16,7 @@ allow_repeats = false
 
 
 [Database Parameters]
-database_url = mysql://michelle:Turbotax98!@localhost:3306/overcookedtest
+database_url = postgresql://vrnqbjbtitghxw:8f51b1850d2cf6d2c51036149ac6df51b70a9fc2a3e098273497d31d56fc04ae@ec2-34-203-114-67.compute-1.amazonaws.com:5432/dc2c7gn8h2sufc
 table_name = turkdemo
 
 [Server Parameters]
@@ -49,5 +49,5 @@ launch_in_sandbox_mode = false
 #
 #   https://<host>:<port>/ad 
 
-use_psiturk_ad_server = false
 ad_location = https://nameless-fjord-92835.herokuapp.com/pub
+use_psiturk_ad_server = false
