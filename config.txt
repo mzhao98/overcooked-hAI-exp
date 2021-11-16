@@ -28,7 +28,7 @@ loglevel = 1
 debug = true
 login_username = username
 login_pw = password
-threads = auto
+threads = 1
 secret_key = 'this is my secret key which is hard to guess, i should change this'
 #certfile = <path_to.crt> 
 #keyfile = <path_to.key>
@@ -43,7 +43,7 @@ num_counters = 1
 #base_pay = 1.50 #for records; 1.00 paid through bonus
 
 [Shell Parameters]
-launch_in_sandbox_mode = true
+launch_in_sandbox_mode = false
 
 # If you are not using the psiturk ad server, set `use_psiturk_ad_server` to `false` and point `ad_location` to your proxy server <host> and <port>. Format the ad_location like this:
 #
