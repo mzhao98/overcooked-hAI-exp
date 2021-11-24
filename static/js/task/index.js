@@ -516,7 +516,7 @@ $(document).ready(() => {
                 'pagename': 'exp/pageblock.html',
                 'pagefunc': function () {
                     let layout_name = main_trial_order[round_num];
-		    getOvercookedPolicy(agent_order[0], layout_name, AGENT_INDEX).then(function(npc_policy) {
+		    getOvercookedPolicy(EXP.MODEL_TYPE, layout_name, AGENT_INDEX).then(function(npc_policy) {
                         $(".instructionsnav").hide();
 			let npc_policies = {};
 			npc_policies[AGENT_INDEX] = npc_policy;
