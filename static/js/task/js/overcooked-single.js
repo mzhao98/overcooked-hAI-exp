@@ -18,7 +18,7 @@ export default class OvercookedSinglePlayerTask{
                 'XXXDPSXX'
             ],
         TIMESTEP = 200,
-        MAX_TIME = 20, //seconds
+        MAX_TIME = 2, //seconds
         init_orders=['onion'],
         always_serve='onion',
         completion_callback = () => {console.log("Time up")},

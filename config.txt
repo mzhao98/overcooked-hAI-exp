@@ -16,7 +16,7 @@ allow_repeats = false
 
 
 [Database Parameters]
-database_url = postgresql://vrnqbjbtitghxw:8f51b1850d2cf6d2c51036149ac6df51b70a9fc2a3e098273497d31d56fc04ae@ec2-34-203-114-67.compute-1.amazonaws.com:5432/dc2c7gn8h2sufc
+database_url = mysql://admin:michelle@testdb.cqnxcsogehau.us-east-1.rds.amazonaws.com:3306/overcookedtest
 table_name = turkdemo
 
 [Server Parameters]
@@ -43,11 +43,12 @@ num_counters = 1
 #base_pay = 1.50 #for records; 1.00 paid through bonus
 
 [Shell Parameters]
-launch_in_sandbox_mode = false
+launch_in_sandbox_mode = true
 
 # If you are not using the psiturk ad server, set `use_psiturk_ad_server` to `false` and point `ad_location` to your proxy server <host> and <port>. Format the ad_location like this:
 #
 #   https://<host>:<port>/ad 
 
-ad_location = https://nameless-fjord-92835.herokuapp.com/pub
-use_psiturk_ad_server = false
+ad_location = https://nameless-fjord-92835.herokuapp.com/ad
+use_psiturk_ad_server = true
+

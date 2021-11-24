@@ -20,7 +20,7 @@ var randomstring = require("randomstring");
 
 //experimental variables
 let EXP = {
-    MAIN_TRIAL_TIME: 60, //seconds
+    MAIN_TRIAL_TIME: 2, //seconds
     TIMESTEP_LENGTH: 150, //milliseconds
     DELIVERY_POINTS: 5,
     POINT_VALUE: .01,
@@ -226,20 +226,28 @@ $(document).ready(() => {
                             <hr>
                             <br>
 
-                            <h3>Final Instructions</h3>
+                            <h3>Practice Rounds</h3>
                             <p>
-                            Next, we will give you a couple of simple collaborative training rounds with a computer partner.
+                            We will give you two simple collaborative practice rounds with a computer partner to help you
+                            familiarize yourself with the game.
                             </p>
-                            <p>Afterwards, in the main part of this task, you will be paired up with a computer partner on harder layouts, 
-                            and you must collaborate with them to play the game.</p>
+
                             <br>
-                            <p>Good luck!</p>
+                            <hr>
+                            <br>
+
+                            <h3>Final Instructions</h3>
+                            <p>Afterwards, in the main part of this task, you will be paired up with a computer partner on 5 harder kitchen layouts, 
+                            and you must collaborate with them to play the game. For each layout, you will be paired with two different partners: Partner A
+                            first, and Partner B second. For each layout, you will be asked to select your preferred partner. </p>
+                            <br>
+                            <p>Good luck! Click continue to proceed to the first practice round. </p>
                             </div>
                         `
                     });
                     setTimeout(() => {
                         $(".instructionsnav").show();
-                    }, 15000)
+                    }, 150)
                 }
             },
 
@@ -332,9 +340,10 @@ $(document).ready(() => {
                         npc_policies: {1: npc_policy},
                         // npc_policies: {1: {0:npc_policy, 1:npc_policy}},
                         TIMESTEP : EXP.TIMESTEP_LENGTH,
-                        MAX_TIME : 30, //seconds
+                        MAX_TIME : 2, //seconds
                         init_orders: ['onion'],
                         completion_callback: () => {
+                            psiTurk.saveData();
                             setTimeout(() => {
                                 $(".instructionsnav").show();
                             }, 1500);
@@ -368,7 +377,8 @@ $(document).ready(() => {
                         questiontext: `
                             <div>
                             <h2>Instructions</h2>
-                            <p>Next, you will cook soups and bring them to your partner
+                            <p>Great job, you've completed Practice Round 1 with Partner X. 
+                            Next, you will cook soups and bring them to your partner, Partner Z,
                             who will bring them to be served.</p>
                             </div>
                         `
@@ -420,11 +430,11 @@ $(document).ready(() => {
                         // npc_policies: {1: {0:npc_policy, 1:npc_policy}},
                         // npc_policies = {1: {0:npc_policy, 1:npc_policy} },
                         TIMESTEP : EXP.TIMESTEP_LENGTH,
-                        MAX_TIME : 40, //seconds
+                        MAX_TIME : 2, //seconds
                         init_orders: ['onion'],
                         always_serve: 'onion',
                         completion_callback: () => {
-                            // psiTurk.saveData()
+                            psiTurk.saveData();
                             setTimeout(() => {
                                 $(".instructionsnav").show();
                             }, 1500);
@@ -467,6 +477,11 @@ $(document).ready(() => {
          Main task
          *********/
         var task_pages = _.map(_.range(main_trial_order.length), (round_num) => {
+            var random_p = Math.random();
+            var agent_order = ['ppo_bc', 'ppo_adapt'];
+            if (random_p <= 0.5){
+                var agent_order = ['ppo_adapt', 'ppo_bc'];
+            }
 
             let round_page = {
                 'pagename': 'exp/pageblock.html',
@@ -479,7 +494,193 @@ $(document).ready(() => {
                     }, 1000);
                 }
             }
-            let game_page = {
+            let instruct1 = {
+                pagename: 'exp/pageblock.html',
+                pagefunc: () => {
+                    $("#pageblock").addClass("center");
+                    $("#pageblock").css("width", "500px");
+                    let survey = new PageBlockSurveyHandler({containername: "pageblock"});
+                    survey.addone({
+                        type: 'textdisplay',
+                        questiontext: `
+                            <div>
+                            <h2>Instructions</h2>
+                            <p>In the next map, you will first play a round with <strong><mark>Partner A.</mark> </strong></p>
+                            </div>
+                        `
+                    });
+                }
+            }
+
+            let game_page_no_adapt = {
+                'pagename': 'exp/pageblock.html',
+                'pagefunc': function () {
+                    let layout_name = main_trial_order[round_num];
+		    getOvercookedPolicy(agent_order[0], layout_name, AGENT_INDEX).then(function(npc_policy) {
+                        $(".instructionsnav").hide();
+			let npc_policies = {};
+			npc_policies[AGENT_INDEX] = npc_policy;
+                        let game = new OvercookedSinglePlayerNoAdaptTask({
+                            container_id: "pageblock",
+			    player_index: EXP.PLAYER_INDEX,
+                            start_grid : layouts[layout_name],
+			    npc_policies: npc_policies,
+                            TIMESTEP : EXP.TIMESTEP_LENGTH,
+                            MAX_TIME : EXP.MAIN_TRIAL_TIME, //seconds
+                            init_orders: ['onion'],
+                            always_serve: 'onion',
+                            completion_callback: () => {
+                                setTimeout(() => {
+                                    $("#next").click()
+                                }, 1500);
+                            },
+                            timestep_callback: (data) => {
+                                data.participant_id = participant_id;
+                                data.layout_name = layout_name;
+                                data.layout = layouts[layout_name];
+                                data.round_num = round_num;
+                                data.round_type = 'main';
+                                data.agent_type = agent_order[0];
+                                psiTurk.recordTrialData(data);
+                                // console.log(data);
+                                console.log(data);
+                                if (data.reward > 0) {
+                                    worker_bonus += EXP.POINT_VALUE*data.reward;
+                                }
+                            },
+                            DELIVERY_REWARD: EXP.DELIVERY_POINTS
+                        });
+                        $("#pageblock").css("text-align", "center");
+                        window.exit_hit = () => {
+                            psiTurk.recordUnstructuredData("early_exit", true);
+                            psiTurk.recordUnstructuredData('bonus_calc', worker_bonus);
+                            psiTurk.recordUnstructuredData('is_leader', is_leader);
+                            psiTurk.saveData({
+                                success: () =>  {
+                                    console.log("Data sent");
+                                    setTimeout(function () {
+                                        instructions.finish();
+                                    }, 1000);
+                                }
+                            });
+                        }
+                        game.init();
+                    });
+                }
+            }
+            let post_game_1 = [
+            {
+                pagename: 'exp/pageblock.html',
+                pagefunc: () => {
+                    let survey = new PageBlockSurveyHandler({containername: "pageblock"});
+                    survey.add([
+                        {
+                            type: 'textdisplay',
+                            questiontext: `
+                                <h3>Survey: Please evaluate your collaboration with Partner A.</h3>
+                            `
+                        },
+                        {
+                            type: 'horizontal-radio',
+                            name: 'fluency-A-'+ (round_num+1),
+                            questiontext: 'Partner A and I worked fluently together.',
+                            options: [
+                                {value: '1', optiontext: 'Strongly Disagree'},
+                                {value: '2', optiontext: 'Disagree'},
+                                {value: '3', optiontext: 'Neither Agree Nor Disagree'},
+                                {value: '4', optiontext: 'Agree'},
+                                {value: '5', optiontext: 'Strongly Agree'},
+                            ]
+                        },
+                        {
+                            type: 'horizontal-radio',
+                            name: 'fluency_over_time-A-'+ (round_num+1),
+                            questiontext: 'The team\'s fluency improved over time.',
+                            options: [
+                                {value: '1', optiontext: 'Strongly Disagree'},
+                                {value: '2', optiontext: 'Disagree'},
+                                {value: '3', optiontext: 'Neither Agree Nor Disagree'},
+                                {value: '4', optiontext: 'Agree'},
+                                {value: '5', optiontext: 'Strongly Agree'},
+                            ]
+                        },
+                        {
+                            type: 'horizontal-radio',
+                            name: 'equal_contribution-A-'+ (round_num+1),
+                            questiontext: 'Partner A contributed equally to the team performance.',
+                            options: [
+                                {value: '1', optiontext: 'Strongly Disagree'},
+                                {value: '2', optiontext: 'Disagree'},
+                                {value: '3', optiontext: 'Neither Agree Nor Disagree'},
+                                {value: '4', optiontext: 'Agree'},
+                                {value: '5', optiontext: 'Strongly Agree'},
+                            ]
+                        },
+                        {
+                            type: 'horizontal-radio',
+                            name: 'unequal_contribution-A-'+ (round_num+1),
+                            questiontext: 'I had to carry the weight to make the team better.',
+                            options: [
+                                {value: '1', optiontext: 'Strongly Disagree'},
+                                {value: '2', optiontext: 'Disagree'},
+                                {value: '3', optiontext: 'Neither Agree Nor Disagree'},
+                                {value: '4', optiontext: 'Agree'},
+                                {value: '5', optiontext: 'Strongly Agree'},
+                            ]
+                        },
+                        {
+                            type: 'horizontal-radio',
+                            name: 'subgoals-A-'+ (round_num+1),
+                            questiontext: 'Partner A perceived accurately what tasks I was trying to accomplish.',
+                            options: [
+                                {value: '1', optiontext: 'Strongly Disagree'},
+                                {value: '2', optiontext: 'Disagree'},
+                                {value: '3', optiontext: 'Neither Agree Nor Disagree'},
+                                {value: '4', optiontext: 'Agree'},
+                                {value: '5', optiontext: 'Strongly Agree'},
+                            ]
+                        },
+                    ]);
+                    $("#pageblock").css("text-align", "center");
+                    window.save_data = () => {
+                        psiTurk.saveData({
+                            success: () =>  {
+                                setTimeout(function () {
+                                    $("#next").click();
+                                }, 2000);
+                                // $("#saving_msg").html("Success!");
+                                console.log("Data sent");
+                            }
+                        });
+                    };
+
+                    window.save_data();
+                }
+            },
+
+
+
+        ]
+
+            let instruct2 = {
+                pagename: 'exp/pageblock.html',
+                pagefunc: () => {
+                    $("#pageblock").addClass("center");
+                    $("#pageblock").css("width", "500px");
+                    let survey = new PageBlockSurveyHandler({containername: "pageblock"});
+                    survey.addone({
+                        type: 'textdisplay',
+                        questiontext: `
+                            <div>
+                            <h2>Instructions</h2>
+                            <p>In the same map, you will next play a round with <strong><mark>Partner B.</mark> </strong>.</p>
+                            </div>
+                        `
+                    });
+                }
+            }
+
+            let game_page_adapt = {
                 'pagename': 'exp/pageblock.html',
                 'pagefunc': function () {
                     let layout_name = main_trial_order[round_num];
@@ -508,8 +709,9 @@ $(document).ready(() => {
                                             data.layout = layouts[layout_name];
                                             data.round_num = round_num;
                                             data.round_type = 'main';
+                                            data.agent_type = agent_order[1];
                                             psiTurk.recordTrialData(data);
-                                            // console.log(data);
+                                            console.log(data);
                                             if (data.reward > 0) {
                                                 worker_bonus += EXP.POINT_VALUE*data.reward;
                                             }
@@ -561,6 +763,7 @@ $(document).ready(() => {
                                             data.layout = layouts[layout_name];
                                             data.round_num = round_num;
                                             data.round_type = 'main';
+                                            data.agent_type = agent_order[1];
                                             psiTurk.recordTrialData(data);
                                             // console.log(data);
                                             if (data.reward > 0) {
@@ -589,7 +792,193 @@ $(document).ready(() => {
 
                 }
             }
-            return [round_page, game_page]
+
+            let post_game_2 = [
+            {
+                pagename: 'exp/pageblock.html',
+                pagefunc: () => {
+                    let survey = new PageBlockSurveyHandler({containername: "pageblock"});
+                    survey.add([
+                        {
+                            type: 'textdisplay',
+                            questiontext: `
+                                <h3>Survey: Please evaluate your collaboration with Partner B. </h3>
+                            `
+                        },
+                        {
+                            type: 'horizontal-radio',
+                            name: 'fluency-B-'+ (round_num+1),
+                            questiontext: 'Partner B and I worked fluently together.',
+                            options: [
+                                {value: '1', optiontext: 'Strongly Disagree'},
+                                {value: '2', optiontext: 'Disagree'},
+                                {value: '3', optiontext: 'Neither Agree Nor Disagree'},
+                                {value: '4', optiontext: 'Agree'},
+                                {value: '5', optiontext: 'Strongly Agree'},
+                            ]
+                        },
+                        {
+                            type: 'horizontal-radio',
+                            name: 'fluency_over_time-B-'+ (round_num+1),
+                            questiontext: 'The team\'s fluency improved over time.',
+                            options: [
+                                {value: '1', optiontext: 'Strongly Disagree'},
+                                {value: '2', optiontext: 'Disagree'},
+                                {value: '3', optiontext: 'Neither Agree Nor Disagree'},
+                                {value: '4', optiontext: 'Agree'},
+                                {value: '5', optiontext: 'Strongly Agree'},
+                            ]
+                        },
+                        {
+                            type: 'horizontal-radio',
+                            name: 'equal_contribution-B-'+ (round_num+1),
+                            questiontext: 'Partner B contributed equally to the team performance.',
+                            options: [
+                                {value: '1', optiontext: 'Strongly Disagree'},
+                                {value: '2', optiontext: 'Disagree'},
+                                {value: '3', optiontext: 'Neither Agree Nor Disagree'},
+                                {value: '4', optiontext: 'Agree'},
+                                {value: '5', optiontext: 'Strongly Agree'},
+                            ]
+                        },
+                        {
+                            type: 'horizontal-radio',
+                            name: 'unequal_contribution-B-'+ (round_num+1),
+                            questiontext: 'I had to carry the weight to make the team better.',
+                            options: [
+                                {value: '1', optiontext: 'Strongly Disagree'},
+                                {value: '2', optiontext: 'Disagree'},
+                                {value: '3', optiontext: 'Neither Agree Nor Disagree'},
+                                {value: '4', optiontext: 'Agree'},
+                                {value: '5', optiontext: 'Strongly Agree'},
+                            ]
+                        },
+                        {
+                            type: 'horizontal-radio',
+                            name: 'subgoals-B-'+ (round_num+1),
+                            questiontext: 'Partner B perceived accurately what tasks I was trying to accomplish.',
+                            options: [
+                                {value: '1', optiontext: 'Strongly Disagree'},
+                                {value: '2', optiontext: 'Disagree'},
+                                {value: '3', optiontext: 'Neither Agree Nor Disagree'},
+                                {value: '4', optiontext: 'Agree'},
+                                {value: '5', optiontext: 'Strongly Agree'},
+                            ]
+                        },
+
+                    ]);
+                    $("#pageblock").css("text-align", "center");
+                    window.save_data = () => {
+                        psiTurk.saveData({
+                            success: () =>  {
+                                setTimeout(function () {
+                                    $("#next").click();
+                                }, 2000);
+                                // $("#saving_msg").html("Success!");
+                                console.log("Data sent");
+                            }
+                        });
+                    };
+
+                    window.save_data();
+                }
+            },
+
+
+
+        ]
+
+            let preference_survey = [
+            {
+                pagename: 'exp/pageblock.html',
+                pagefunc: () => {
+                    let survey = new PageBlockSurveyHandler({containername: "pageblock"});
+                    survey.add([
+                        {
+                            type: 'textdisplay',
+                            questiontext: `
+                                <h3>Preferred Partner Selection: Please select which partner you preferred to work with.</h3>
+                            `
+                        },
+                        {
+                            type: 'horizontal-radio',
+                            name: 'preferred_partner'+ (round_num+1),
+                            questiontext: 'Which partner did you prefer?',
+                            options: [
+                                {value: '1', optiontext: 'Partner A (First Round)'},
+                                {value: '2', optiontext: 'Partner B (Second Round)'},
+                            ]
+                        },
+                        {
+                            type: 'textdisplay',
+                            questiontext: `
+                                <h3>Please explain the reason for your preference.</h3>
+                            `
+                        },
+                        {
+                            type: 'horizontal-radio',
+                            name: 'more_contribution'+ (round_num+1),
+                            questiontext: 'The partner I selected contributed more than the other.',
+                            options: [
+                                {value: '1', optiontext: 'Strongly Disagree'},
+                                {value: '2', optiontext: 'Disagree'},
+                                {value: '3', optiontext: 'Neither Agree Nor Disagree'},
+                                {value: '4', optiontext: 'Agree'},
+                                {value: '5', optiontext: 'Strongly Agree'},
+                            ]
+                        },
+                        {
+                            type: 'horizontal-radio',
+                            name: 'more_effective'+ (round_num+1),
+                            questiontext: 'I collaborated more effectively with the partner I selected than the other.',
+                            options: [
+                                {value: '1', optiontext: 'Strongly Disagree'},
+                                {value: '2', optiontext: 'Disagree'},
+                                {value: '3', optiontext: 'Neither Agree Nor Disagree'},
+                                {value: '4', optiontext: 'Agree'},
+                                {value: '5', optiontext: 'Strongly Agree'},
+                            ]
+                        },
+                        {
+                            type: 'horizontal-radio',
+                            name: 'more_fluent'+ (round_num+1),
+                            questiontext: 'My collaboration was more fluent with the partner I selected than the other.',
+                            options: [
+                                {value: '1', optiontext: 'Strongly Disagree'},
+                                {value: '2', optiontext: 'Disagree'},
+                                {value: '3', optiontext: 'Neither Agree Nor Disagree'},
+                                {value: '4', optiontext: 'Agree'},
+                                {value: '5', optiontext: 'Strongly Agree'},
+                            ]
+                        },
+
+                    ]);
+                    $("#pageblock").css("text-align", "center");
+                    window.save_data = () => {
+                        psiTurk.saveData({
+                            success: () =>  {
+                                setTimeout(function () {
+                                    $("#next").click();
+                                }, 2000);
+                                // $("#saving_msg").html("Success!");
+                                console.log("Data sent");
+                            }
+                        });
+                    };
+
+                    window.save_data();
+                }
+            },
+
+
+
+        ]
+
+            let output = [round_page, instruct1, game_page_no_adapt, post_game_1, instruct2, game_page_adapt, post_game_2, preference_survey];
+            if (agent_order[0] === "ppo_adapt"){
+                let output = [round_page, instruct1, game_page_adapt, post_game_1, instruct2, game_page_no_adapt, post_game_2, preference_survey];
+            }
+            return output
         });
         task_pages = _.flattenDeep(task_pages);
 
@@ -597,110 +986,6 @@ $(document).ready(() => {
          Post-task
          *********/
         let post_task_pages = [
-            {
-                pagename: 'exp/pageblock.html',
-                pagefunc: () => {
-                    let survey = new PageBlockSurveyHandler({containername: "pageblock"});
-                    survey.add([
-                        {
-                            type: 'textdisplay',
-                            questiontext: `
-                                <h3>Survey</h3>
-                            `
-                        },
-                        {
-                            type: 'textbox',
-                            name: "self_strategy",
-                            questiontext: 'How would you describe your strategy?',
-                            leftalign: false
-                        },
-                        {
-                            type: 'textbox',
-                            name: "partner_strategy",
-                            questiontext: "How would you describe your partner's strategy?",
-                            leftalign: false
-                        },
-                        {
-                            type: 'textbox',
-                            name: "video_games",
-                            questiontext: "What is your experience playing video games?",
-                            leftalign: false
-                        },
-                        {
-                            type: 'textbox',
-                            name: "other_feedback",
-                            questiontext: 'Do you have other comments on this game or how it could be improved?',
-                            leftalign: false
-                        }
-                    ]);
-                }
-            },
-            {
-                pagename: 'exp/pageblock.html',
-                pagefunc: () => {
-                    let survey = new PageBlockSurveyHandler({containername: "pageblock"});
-                    survey.add([
-                        {
-                            type: 'textdisplay',
-                            questiontext: `
-                                <h3>Survey</h3>
-                            `
-                        },
-                        {
-                            type: 'horizontal-radio',
-                            name: 'difficulty',
-                            questiontext: 'How difficult was this task?',
-                            options: [
-                                {value: '1', optiontext: 'Very Easy'},
-                                {value: '2', optiontext: 'Easy'},
-                                {value: '3', optiontext: 'Somewhat Easy'},
-                                {value: '4', optiontext: 'Somewhat Difficult'},
-                                {value: '5', optiontext: 'Difficult'},
-                                {value: '6', optiontext: 'Very Difficult'}
-                            ]
-                        },
-                        {
-                            type: 'horizontal-radio',
-                            name: 'smoothness',
-                            questiontext: 'How smooth was cooperation with your partner?',
-                            options: [
-                                {value: '1', optiontext: 'Very Unsmooth'},
-                                {value: '2', optiontext: 'Unsmooth'},
-                                {value: '3', optiontext: 'Somewhat Unsmooth'},
-                                {value: '4', optiontext: 'Somewhat Smooth'},
-                                {value: '5', optiontext: 'Smooth'},
-                                {value: '6', optiontext: 'Very Smooth'}
-                            ]
-                        },
-                        {
-                            type: 'horizontal-radio',
-                            name: 'intuitiveness',
-                            questiontext: 'How intuitive was this task?',
-                            options: [
-                                {value: '1', optiontext: 'Very Unintuitive'},
-                                {value: '2', optiontext: 'Unintuitive'},
-                                {value: '3', optiontext: 'Somewhat Unintuitive'},
-                                {value: '4', optiontext: 'Somewhat Intuitive'},
-                                {value: '5', optiontext: 'Intuitive'},
-                                {value: '6', optiontext: 'Very Intuitive'}
-                            ]
-                        },
-                        {
-                            type: 'horizontal-radio',
-                            name: 'fun',
-                            questiontext: 'How fun was this task?',
-                            options: [
-                                {value: '1', optiontext: 'Very Unfun'},
-                                {value: '2', optiontext: 'Unfun'},
-                                {value: '3', optiontext: 'Somewhat Unfun'},
-                                {value: '4', optiontext: 'Somewhat Fun'},
-                                {value: '5', optiontext: 'Fun'},
-                                {value: '6', optiontext: 'Very Fun'}
-                            ]
-                        },
-                    ]);
-                }
-            },
             // Demographics
             {
                 'pagename': 'exp/pageblock.html',
@@ -712,13 +997,16 @@ $(document).ready(() => {
                             questiontext: 'Age',
                         },
                         {
-                            type: 'textbox',
+                            type: 'vertical-radio',
                             name: 'gender',
                             questiontext: 'Gender',
-                            rows: 1,
-                            cols: 25,
-                            leftalign: true,
-                            required: true
+                            options: [
+                                {value: '1', optiontext: 'Woman'},
+                                {value: '2', optiontext: 'Man'},
+                                {value: '3', optiontext: 'Transgender'},
+                                {value: '4', optiontext: 'Non-binary/Non-conforming'},
+                                {value: '5', optiontext: 'Prefer Not to Respond'},
+                            ]
                         },
                     ];
                     let survey = new PageBlockSurveyHandler({containername: "pageblock"});
