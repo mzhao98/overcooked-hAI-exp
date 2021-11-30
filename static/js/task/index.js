@@ -20,7 +20,7 @@ var randomstring = require("randomstring");
 
 //experimental variables
 let EXP = {
-    MAIN_TRIAL_TIME: 2, //seconds
+    MAIN_TRIAL_TIME: 60, //seconds
     TIMESTEP_LENGTH: 150, //milliseconds
     DELIVERY_POINTS: 5,
     POINT_VALUE: .01,
@@ -74,7 +74,8 @@ let layouts = {
 };
 let main_trial_order =
     ["cramped_room", "asymmetric_advantages", "coordination_ring", "random3", "random0"];
-
+// let main_trial_order =
+//     ["random0", "cramped_room"];
 $(document).ready(() => {
     /*
      * Requires:
@@ -516,7 +517,7 @@ $(document).ready(() => {
                 'pagename': 'exp/pageblock.html',
                 'pagefunc': function () {
                     let layout_name = main_trial_order[round_num];
-		    getOvercookedPolicy(EXP.MODEL_TYPE, layout_name, AGENT_INDEX).then(function(npc_policy) {
+		    getOvercookedPolicy("ppo_bc", layout_name, AGENT_INDEX).then(function(npc_policy) {
                         $(".instructionsnav").hide();
 			let npc_policies = {};
 			npc_policies[AGENT_INDEX] = npc_policy;
@@ -684,111 +685,324 @@ $(document).ready(() => {
                 'pagename': 'exp/pageblock.html',
                 'pagefunc': function () {
                     let layout_name = main_trial_order[round_num];
-                        if (layout_name === "random0"){
-                            getOvercookedPolicy(EXP.MODEL_TYPE, layout_name, AGENT_INDEX).then(function (npc_policy_1) {getOvercookedPolicy(EXP.MODEL_TYPE, layout_name+'_temp', AGENT_INDEX).then(function(npc_policy) {
-                            $(".instructionsnav").hide();
-                            let npc_policies = {};
-                            npc_policies[AGENT_INDEX] = {0:npc_policy, 1:npc_policy_1};
-                            let game = new OvercookedSinglePlayerTask({
-                                        container_id: "pageblock",
-                            player_index: EXP.PLAYER_INDEX,
-                                        start_grid : layouts[layout_name],
-                            npc_policies: npc_policies,
-                                        TIMESTEP : EXP.TIMESTEP_LENGTH,
-                                        MAX_TIME : EXP.MAIN_TRIAL_TIME, //seconds
-                                        init_orders: ['onion'],
-                                        always_serve: 'onion',
-                                        completion_callback: () => {
-                                            setTimeout(() => {
-                                                $("#next").click()
-                                            }, 1500);
-                                        },
-                                        timestep_callback: (data) => {
-                                            data.participant_id = participant_id;
-                                            data.layout_name = layout_name;
-                                            data.layout = layouts[layout_name];
-                                            data.round_num = round_num;
-                                            data.round_type = 'main';
-                                            data.agent_type = agent_order[1];
-                                            psiTurk.recordTrialData(data);
-                                            console.log(data);
-                                            if (data.reward > 0) {
-                                                worker_bonus += EXP.POINT_VALUE*data.reward;
-                                            }
-                                        },
-                                        DELIVERY_REWARD: EXP.DELIVERY_POINTS
-                                    });
-
-
-                            $("#pageblock").css("text-align", "center");
-                                window.exit_hit = () => {
-                                    psiTurk.recordUnstructuredData("early_exit", true);
-                                    psiTurk.recordUnstructuredData('bonus_calc', worker_bonus);
-                                    psiTurk.recordUnstructuredData('is_leader', is_leader);
-                                    psiTurk.saveData({
-                                        success: () =>  {
-                                            console.log("Data sent");
-                                            setTimeout(function () {
-                                                instructions.finish();
-                                            }, 1000);
+                    console.log("layout name: "+layout_name)
+                    if (layout_name === "random0"){
+                        getOvercookedPolicy("ppo_adapt", layout_name+'_strat0', AGENT_INDEX).then(function (npc_policy_1) {getOvercookedPolicy("ppo_adapt", layout_name+'_strat1', AGENT_INDEX).then(function(npc_policy) {
+                        $(".instructionsnav").hide();
+                        let npc_policies = {};
+                        npc_policies[AGENT_INDEX] = {0:npc_policy, 1:npc_policy_1};
+                        let game = new OvercookedSinglePlayerTask({
+                                    container_id: "pageblock",
+                        player_index: EXP.PLAYER_INDEX,
+                                    start_grid : layouts[layout_name],
+                        npc_policies: npc_policies,
+                                    TIMESTEP : EXP.TIMESTEP_LENGTH,
+                                    MAX_TIME : EXP.MAIN_TRIAL_TIME, //seconds
+                                    init_orders: ['onion'],
+                                    always_serve: 'onion',
+                                    completion_callback: () => {
+                                        setTimeout(() => {
+                                            $("#next").click()
+                                        }, 1500);
+                                    },
+                                    timestep_callback: (data) => {
+                                        data.participant_id = participant_id;
+                                        data.layout_name = layout_name;
+                                        data.layout = layouts[layout_name];
+                                        data.round_num = round_num;
+                                        data.round_type = 'main';
+                                        data.agent_type = agent_order[1];
+                                        psiTurk.recordTrialData(data);
+                                        // console.log(data);
+                                        if (data.reward > 0) {
+                                            worker_bonus += EXP.POINT_VALUE*data.reward;
                                         }
-                                    });
-                                }
-                                game.init();
+                                    },
+                                    DELIVERY_REWARD: EXP.DELIVERY_POINTS
+                                });
+
+
+                        $("#pageblock").css("text-align", "center");
+                            window.exit_hit = () => {
+                                psiTurk.recordUnstructuredData("early_exit", true);
+                                psiTurk.recordUnstructuredData('bonus_calc', worker_bonus);
+                                psiTurk.recordUnstructuredData('is_leader', is_leader);
+                                psiTurk.saveData({
+                                    success: () =>  {
+                                        console.log("Data sent");
+                                        setTimeout(function () {
+                                            instructions.finish();
+                                        }, 1000);
+                                    }
+                                });
+                            }
+                            game.init();
                         })});
                     }
-                    else{
-                        getOvercookedPolicy(EXP.MODEL_TYPE, layout_name, AGENT_INDEX).then(function(npc_policy) {
-                            $(".instructionsnav").hide();
-                            let npc_policies = {};
-                            npc_policies[AGENT_INDEX] = npc_policy;
-
-                            let game = new OvercookedSinglePlayerNoAdaptTask({
-                                        container_id: "pageblock",
-                            player_index: EXP.PLAYER_INDEX,
-                                        start_grid : layouts[layout_name],
-                            npc_policies: npc_policies,
-                                        TIMESTEP : EXP.TIMESTEP_LENGTH,
-                                        MAX_TIME : EXP.MAIN_TRIAL_TIME, //seconds
-                                        init_orders: ['onion'],
-                                        always_serve: 'onion',
-                                        completion_callback: () => {
-                                            setTimeout(() => {
-                                                $("#next").click()
-                                            }, 1500);
-                                        },
-                                        timestep_callback: (data) => {
-                                            data.participant_id = participant_id;
-                                            data.layout_name = layout_name;
-                                            data.layout = layouts[layout_name];
-                                            data.round_num = round_num;
-                                            data.round_type = 'main';
-                                            data.agent_type = agent_order[1];
-                                            psiTurk.recordTrialData(data);
-                                            // console.log(data);
-                                            if (data.reward > 0) {
-                                                worker_bonus += EXP.POINT_VALUE*data.reward;
-                                            }
-                                        },
-                                        DELIVERY_REWARD: EXP.DELIVERY_POINTS
-                                    });
-                            $("#pageblock").css("text-align", "center");
-                                window.exit_hit = () => {
-                                    psiTurk.recordUnstructuredData("early_exit", true);
-                                    psiTurk.recordUnstructuredData('bonus_calc', worker_bonus);
-                                    psiTurk.recordUnstructuredData('is_leader', is_leader);
-                                    psiTurk.saveData({
-                                        success: () =>  {
-                                            console.log("Data sent");
-                                            setTimeout(function () {
-                                                instructions.finish();
-                                            }, 1000);
+                    else if (layout_name === "asymmetric_advantages"){
+                        getOvercookedPolicy("ppo_adapt", layout_name+'_strat0', AGENT_INDEX).then(function (npc_policy_1) {getOvercookedPolicy("ppo_adapt", layout_name+'_strat1', AGENT_INDEX).then(function(npc_policy) {
+                        $(".instructionsnav").hide();
+                        let npc_policies = {};
+                        npc_policies[AGENT_INDEX] = {0:npc_policy, 1:npc_policy_1};
+                        let game = new OvercookedSinglePlayerTask({
+                                    container_id: "pageblock",
+                        player_index: EXP.PLAYER_INDEX,
+                                    start_grid : layouts[layout_name],
+                        npc_policies: npc_policies,
+                                    TIMESTEP : EXP.TIMESTEP_LENGTH,
+                                    MAX_TIME : EXP.MAIN_TRIAL_TIME, //seconds
+                                    init_orders: ['onion'],
+                                    always_serve: 'onion',
+                                    completion_callback: () => {
+                                        setTimeout(() => {
+                                            $("#next").click()
+                                        }, 1500);
+                                    },
+                                    timestep_callback: (data) => {
+                                        data.participant_id = participant_id;
+                                        data.layout_name = layout_name;
+                                        data.layout = layouts[layout_name];
+                                        data.round_num = round_num;
+                                        data.round_type = 'main';
+                                        data.agent_type = agent_order[1];
+                                        psiTurk.recordTrialData(data);
+                                        // console.log(data);
+                                        if (data.reward > 0) {
+                                            worker_bonus += EXP.POINT_VALUE*data.reward;
                                         }
-                                    });
-                                }
-                                game.init();
-                        });
+                                    },
+                                    DELIVERY_REWARD: EXP.DELIVERY_POINTS
+                                });
+
+
+                        $("#pageblock").css("text-align", "center");
+                            window.exit_hit = () => {
+                                psiTurk.recordUnstructuredData("early_exit", true);
+                                psiTurk.recordUnstructuredData('bonus_calc', worker_bonus);
+                                psiTurk.recordUnstructuredData('is_leader', is_leader);
+                                psiTurk.saveData({
+                                    success: () =>  {
+                                        console.log("Data sent");
+                                        setTimeout(function () {
+                                            instructions.finish();
+                                        }, 1000);
+                                    }
+                                });
+                            }
+                            game.init();
+                        })});
                     }
+                    else if (layout_name === "cramped_room"){
+                        getOvercookedPolicy("ppo_adapt", layout_name+'_strat0', AGENT_INDEX).then(function (npc_policy_1) {getOvercookedPolicy("ppo_adapt", layout_name+'_strat1', AGENT_INDEX).then(function(npc_policy) {
+                        $(".instructionsnav").hide();
+                        let npc_policies = {};
+                        npc_policies[AGENT_INDEX] = {0:npc_policy, 1:npc_policy_1};
+                        let game = new OvercookedSinglePlayerTask({
+                                    container_id: "pageblock",
+                        player_index: EXP.PLAYER_INDEX,
+                                    start_grid : layouts[layout_name],
+                        npc_policies: npc_policies,
+                                    TIMESTEP : EXP.TIMESTEP_LENGTH,
+                                    MAX_TIME : EXP.MAIN_TRIAL_TIME, //seconds
+                                    init_orders: ['onion'],
+                                    always_serve: 'onion',
+                                    completion_callback: () => {
+                                        setTimeout(() => {
+                                            $("#next").click()
+                                        }, 1500);
+                                    },
+                                    timestep_callback: (data) => {
+                                        data.participant_id = participant_id;
+                                        data.layout_name = layout_name;
+                                        data.layout = layouts[layout_name];
+                                        data.round_num = round_num;
+                                        data.round_type = 'main';
+                                        data.agent_type = agent_order[1];
+                                        psiTurk.recordTrialData(data);
+                                        // console.log(data);
+                                        if (data.reward > 0) {
+                                            worker_bonus += EXP.POINT_VALUE*data.reward;
+                                        }
+                                    },
+                                    DELIVERY_REWARD: EXP.DELIVERY_POINTS
+                                });
+
+
+                        $("#pageblock").css("text-align", "center");
+                            window.exit_hit = () => {
+                                psiTurk.recordUnstructuredData("early_exit", true);
+                                psiTurk.recordUnstructuredData('bonus_calc', worker_bonus);
+                                psiTurk.recordUnstructuredData('is_leader', is_leader);
+                                psiTurk.saveData({
+                                    success: () =>  {
+                                        console.log("Data sent");
+                                        setTimeout(function () {
+                                            instructions.finish();
+                                        }, 1000);
+                                    }
+                                });
+                            }
+                            game.init();
+                        })});
+                    }
+                    else if (layout_name === "coordination_ring"){
+                        getOvercookedPolicy("ppo_adapt", layout_name+'_strat0', AGENT_INDEX).then(function (npc_policy_1) {getOvercookedPolicy("ppo_adapt", layout_name+'_strat1', AGENT_INDEX).then(function(npc_policy) {
+                        $(".instructionsnav").hide();
+                        let npc_policies = {};
+                        npc_policies[AGENT_INDEX] = {0:npc_policy, 1:npc_policy_1};
+                        let game = new OvercookedSinglePlayerTask({
+                                    container_id: "pageblock",
+                        player_index: EXP.PLAYER_INDEX,
+                                    start_grid : layouts[layout_name],
+                        npc_policies: npc_policies,
+                                    TIMESTEP : EXP.TIMESTEP_LENGTH,
+                                    MAX_TIME : EXP.MAIN_TRIAL_TIME, //seconds
+                                    init_orders: ['onion'],
+                                    always_serve: 'onion',
+                                    completion_callback: () => {
+                                        setTimeout(() => {
+                                            $("#next").click()
+                                        }, 1500);
+                                    },
+                                    timestep_callback: (data) => {
+                                        data.participant_id = participant_id;
+                                        data.layout_name = layout_name;
+                                        data.layout = layouts[layout_name];
+                                        data.round_num = round_num;
+                                        data.round_type = 'main';
+                                        data.agent_type = agent_order[1];
+                                        psiTurk.recordTrialData(data);
+                                        // console.log(data);
+                                        if (data.reward > 0) {
+                                            worker_bonus += EXP.POINT_VALUE*data.reward;
+                                        }
+                                    },
+                                    DELIVERY_REWARD: EXP.DELIVERY_POINTS
+                                });
+
+
+                        $("#pageblock").css("text-align", "center");
+                            window.exit_hit = () => {
+                                psiTurk.recordUnstructuredData("early_exit", true);
+                                psiTurk.recordUnstructuredData('bonus_calc', worker_bonus);
+                                psiTurk.recordUnstructuredData('is_leader', is_leader);
+                                psiTurk.saveData({
+                                    success: () =>  {
+                                        console.log("Data sent");
+                                        setTimeout(function () {
+                                            instructions.finish();
+                                        }, 1000);
+                                    }
+                                });
+                            }
+                            game.init();
+                        })});
+                    }
+                    else if (layout_name === "random3"){
+                        getOvercookedPolicy("ppo_adapt", layout_name+'_strat0', AGENT_INDEX).then(function (npc_policy_1) {getOvercookedPolicy("ppo_adapt", layout_name+'_strat1', AGENT_INDEX).then(function(npc_policy) {
+                        $(".instructionsnav").hide();
+                        let npc_policies = {};
+                        npc_policies[AGENT_INDEX] = {0:npc_policy, 1:npc_policy_1};
+                        let game = new OvercookedSinglePlayerTask({
+                                    container_id: "pageblock",
+                        player_index: EXP.PLAYER_INDEX,
+                                    start_grid : layouts[layout_name],
+                        npc_policies: npc_policies,
+                                    TIMESTEP : EXP.TIMESTEP_LENGTH,
+                                    MAX_TIME : EXP.MAIN_TRIAL_TIME, //seconds
+                                    init_orders: ['onion'],
+                                    always_serve: 'onion',
+                                    completion_callback: () => {
+                                        setTimeout(() => {
+                                            $("#next").click()
+                                        }, 1500);
+                                    },
+                                    timestep_callback: (data) => {
+                                        data.participant_id = participant_id;
+                                        data.layout_name = layout_name;
+                                        data.layout = layouts[layout_name];
+                                        data.round_num = round_num;
+                                        data.round_type = 'main';
+                                        data.agent_type = agent_order[1];
+                                        psiTurk.recordTrialData(data);
+                                        // console.log(data);
+                                        if (data.reward > 0) {
+                                            worker_bonus += EXP.POINT_VALUE*data.reward;
+                                        }
+                                    },
+                                    DELIVERY_REWARD: EXP.DELIVERY_POINTS
+                                });
+
+
+                        $("#pageblock").css("text-align", "center");
+                            window.exit_hit = () => {
+                                psiTurk.recordUnstructuredData("early_exit", true);
+                                psiTurk.recordUnstructuredData('bonus_calc', worker_bonus);
+                                psiTurk.recordUnstructuredData('is_leader', is_leader);
+                                psiTurk.saveData({
+                                    success: () =>  {
+                                        console.log("Data sent");
+                                        setTimeout(function () {
+                                            instructions.finish();
+                                        }, 1000);
+                                    }
+                                });
+                            }
+                            game.init();
+                        })});
+                    }
+                    // else{
+                    //     getOvercookedPolicy("ppo_bc", layout_name, AGENT_INDEX).then(function(npc_policy) {
+                    //         $(".instructionsnav").hide();
+                    //         let npc_policies = {};
+                    //         npc_policies[AGENT_INDEX] = npc_policy;
+                    //
+                    //         let game = new OvercookedSinglePlayerNoAdaptTask({
+                    //                     container_id: "pageblock",
+                    //         player_index: EXP.PLAYER_INDEX,
+                    //                     start_grid : layouts[layout_name],
+                    //         npc_policies: npc_policies,
+                    //                     TIMESTEP : EXP.TIMESTEP_LENGTH,
+                    //                     MAX_TIME : EXP.MAIN_TRIAL_TIME, //seconds
+                    //                     init_orders: ['onion'],
+                    //                     always_serve: 'onion',
+                    //                     completion_callback: () => {
+                    //                         setTimeout(() => {
+                    //                             $("#next").click()
+                    //                         }, 1500);
+                    //                     },
+                    //                     timestep_callback: (data) => {
+                    //                         data.participant_id = participant_id;
+                    //                         data.layout_name = layout_name;
+                    //                         data.layout = layouts[layout_name];
+                    //                         data.round_num = round_num;
+                    //                         data.round_type = 'main';
+                    //                         data.agent_type = agent_order[1];
+                    //                         psiTurk.recordTrialData(data);
+                    //                         // console.log(data);
+                    //                         if (data.reward > 0) {
+                    //                             worker_bonus += EXP.POINT_VALUE*data.reward;
+                    //                         }
+                    //                     },
+                    //                     DELIVERY_REWARD: EXP.DELIVERY_POINTS
+                    //                 });
+                    //         $("#pageblock").css("text-align", "center");
+                    //             window.exit_hit = () => {
+                    //                 psiTurk.recordUnstructuredData("early_exit", true);
+                    //                 psiTurk.recordUnstructuredData('bonus_calc', worker_bonus);
+                    //                 psiTurk.recordUnstructuredData('is_leader', is_leader);
+                    //                 psiTurk.saveData({
+                    //                     success: () =>  {
+                    //                         console.log("Data sent");
+                    //                         setTimeout(function () {
+                    //                             instructions.finish();
+                    //                         }, 1000);
+                    //                     }
+                    //                 });
+                    //             }
+                    //             game.init();
+                    //     });
+                    // }
 
                 }
             }

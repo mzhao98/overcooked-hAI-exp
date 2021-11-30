@@ -21,7 +21,7 @@ table_name = turkdemo
 
 [Server Parameters]
 host = 0.0.0.0
-port = 22362
+port = 3000
 cutoff_time = 45
 logfile = server.log
 loglevel = 1
@@ -43,7 +43,7 @@ num_counters = 1
 #base_pay = 1.50 #for records; 1.00 paid through bonus
 
 [Shell Parameters]
-launch_in_sandbox_mode = true
+launch_in_sandbox_mode = false
 
 # If you are not using the psiturk ad server, set `use_psiturk_ad_server` to `false` and point `ad_location` to your proxy server <host> and <port>. Format the ad_location like this:
 #

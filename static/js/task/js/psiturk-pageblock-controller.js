@@ -129,6 +129,13 @@ export default function PageBlockController(
                     );
                     window.scrollTo($(this).position()['left'], $(this).position()['top'])
                 }
+                else if (_.contains(this.classList, "number-required") && text < 18) {
+                    $(this).addClass("invalid-response");
+                    $(this).append(
+                        "<div class='invalid-response-text'>Response required. Age must be 18+.</div>"
+                    );
+                    window.scrollTo($(this).position()['left'], $(this).position()['top'])
+                }
             }
 
             //required interaction

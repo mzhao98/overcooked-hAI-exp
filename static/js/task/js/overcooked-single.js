@@ -268,6 +268,7 @@ export default class OvercookedSinglePlayerTask{
                 }
                 this.weight_assignment = [robot_0_g, robot_1_g];
 
+                console.log("weight assignment: "+ this.weight_assignment)
 
 
 
