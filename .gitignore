@@ -167,6 +167,9 @@ venv.bak/
 #
 #
 participants.db
+config.txt
+/config.txt
+*.txt
 
 *.log
 
