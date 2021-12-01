@@ -16,7 +16,7 @@ allow_repeats = false
 
 
 [Database Parameters]
-database_url = mysql://admin:michelle@testdb.cqnxcsogehau.us-east-1.rds.amazonaws.com:3306/overcookedtest
+database_url = XX
 table_name = turkdemo
 
 [Server Parameters]
