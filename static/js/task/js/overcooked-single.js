@@ -112,16 +112,16 @@ export default class OvercookedSinglePlayerTask{
 
                 var weighted_proba = (r0_action_prob * this.weight_assignment[0]) + (r1_action_prob * this.weight_assignment[1]);
                 weighted_action_probs.push(weighted_proba);
-                console.log("r0_action_prob = "+ r0_action_prob);
-                console.log("r1_action_prob = "+ r1_action_prob);
-                console.log("weighted_proba = "+ weighted_proba);
+                // console.log("r0_action_prob = "+ r0_action_prob);
+                // console.log("r1_action_prob = "+ r1_action_prob);
+                // console.log("weighted_proba = "+ weighted_proba);
             }
 
             var final_max_action = Action.INDEX_TO_ACTION[argmax(weighted_action_probs)];
-            console.log("model weights probs = "+ this.weight_assignment[0] + " , "+ this.weight_assignment[1]);
-            console.log("action weights probs = "+ weighted_action_probs);
-            // console.log("action init: "+  action)
-            console.log("final_max_action: "+  final_max_action)
+            // console.log("model weights probs = "+ this.weight_assignment[0] + " , "+ this.weight_assignment[1]);
+            // console.log("action weights probs = "+ weighted_action_probs);
+            // // console.log("action init: "+  action)
+            // console.log("final_max_action: "+  final_max_action)
 
             this.joint_action[npc_index] = final_max_action;
 
@@ -216,59 +216,93 @@ export default class OvercookedSinglePlayerTask{
 
                 let npc_a_0_h_max_prob = max(npc_a_0_h_proba);
                 let npc_a_1_h_max_prob = max(npc_a_1_h_proba);
-                var gamma = 0.9;
-                var max_history_length = 5;
+                var gamma = 1;
+                var max_history_length = 35;
                 var h_action_idx = Action.ACTION_TO_INDEX[action]
 
-                if (this.human_history.length === max_history_length){
-                    this.human_history.shift();
-                    this.robot_predicted_human_history_proba_0.shift();
-                    this.robot_predicted_human_history_proba_1.shift();
-                    this.human_history.push(action);
+                if (h_action_idx != 4){
+                    if (this.human_history.length === max_history_length){
+                        this.human_history.shift();
+                        this.human_history.push(h_action_idx);
 
-                    this.robot_true_human_history_proba_0.push(npc_a_0_h_proba[h_action_idx]);
-                    this.robot_true_human_history_proba_1.push(npc_a_1_h_proba[h_action_idx]);
 
-                    this.robot_predicted_human_history_proba_0.push(npc_a_0_h_max_prob);
-                    this.robot_predicted_human_history_proba_1.push(npc_a_1_h_max_prob);
-                }
 
-                var robot_1_g = 0;
-                var robot_0_g = 0;
-                for (var idx = 0; idx < this.human_history.length; idx++) {
-                    var past_human_action_idx = this.human_history[idx];
-                    var r0_prob_human_action_TRUE = this.robot_true_human_history_proba_0[idx];
-                    var r1_prob_human_action_TRUE = this.robot_true_human_history_proba_1[idx];
 
-                    var r0_prob_human_action_PRED = this.robot_predicted_human_history_proba_0[idx];
-                    var r1_prob_human_action_PRED = this.robot_predicted_human_history_proba_1[idx];
+                        this.robot_true_human_history_proba_0.shift();
+                        this.robot_true_human_history_proba_1.shift();
+                        this.robot_true_human_history_proba_0.push(npc_a_0_h_proba[h_action_idx]);
+                        this.robot_true_human_history_proba_1.push(npc_a_1_h_proba[h_action_idx]);
 
-                    robot_0_g = robot_0_g + ((gamma * (max_history_length - idx)) * Math.abs(r0_prob_human_action_PRED-r0_prob_human_action_TRUE));
-                    robot_1_g = robot_1_g + ((gamma * (max_history_length - idx)) * Math.abs(r1_prob_human_action_PRED-r1_prob_human_action_TRUE));
-                }
-                if (robot_0_g+ robot_1_g === 0){
-                    robot_0_g = 0.5;
-                    robot_1_g = 0.5;
-                }
-                else{
-                    robot_0_g = robot_0_g/(robot_0_g+ robot_1_g);
-                    robot_1_g = robot_1_g/(robot_0_g+ robot_1_g);
 
-                    robot_0_g = 1-robot_0_g;
-                    robot_1_g = 1-robot_1_g;
-                    if (robot_0_g+ robot_1_g === 0){
+                        this.robot_predicted_human_history_proba_0.shift();
+                        this.robot_predicted_human_history_proba_1.shift();
+                        this.robot_predicted_human_history_proba_0.push(npc_a_0_h_max_prob);
+                        this.robot_predicted_human_history_proba_1.push(npc_a_1_h_max_prob);
+                    }
+                    else{
+                        this.human_history.push(h_action_idx);
+
+                        this.robot_true_human_history_proba_0.push(npc_a_0_h_proba[h_action_idx]);
+                        this.robot_true_human_history_proba_1.push(npc_a_1_h_proba[h_action_idx]);
+
+                        this.robot_predicted_human_history_proba_0.push(npc_a_0_h_max_prob);
+                        this.robot_predicted_human_history_proba_1.push(npc_a_1_h_max_prob);
+                    }
+                    console.log("human history: "+this.human_history)
+                    console.log("robot_true_human_history_proba_0: "+this.robot_true_human_history_proba_0)
+                    console.log("robot_true_human_history_proba_1: "+this.robot_true_human_history_proba_1)
+                    console.log("robot_predicted_human_history_proba_0: "+this.robot_predicted_human_history_proba_0)
+                    console.log("robot_predicted_human_history_proba_1: "+this.robot_predicted_human_history_proba_1)
+                    console.log("model weights ORIG probs = "+ this.weight_assignment[0] + " , "+ this.weight_assignment[1]);
+
+                    var robot_1_g = 0;
+                    var robot_0_g = 0;
+                    for (var idx = 0; idx < this.human_history.length; idx++) {
+                        var past_human_action_idx = this.human_history[idx];
+                        var r0_prob_human_action_TRUE = this.robot_true_human_history_proba_0[idx];
+                        var r1_prob_human_action_TRUE = this.robot_true_human_history_proba_1[idx];
+
+                        var r0_prob_human_action_PRED = this.robot_predicted_human_history_proba_0[idx];
+                        var r1_prob_human_action_PRED = this.robot_predicted_human_history_proba_1[idx];
+
+                        robot_0_g = robot_0_g + ((gamma * (max_history_length - idx)) * Math.abs(r0_prob_human_action_PRED-r0_prob_human_action_TRUE));
+                        robot_1_g = robot_1_g + ((gamma * (max_history_length - idx)) * Math.abs(r1_prob_human_action_PRED-r1_prob_human_action_TRUE));
+                    }
+                    console.log("g values = "+ robot_0_g + " , "+ robot_1_g);
+                    if (robot_0_g + robot_1_g === 0){
                         robot_0_g = 0.5;
                         robot_1_g = 0.5;
                     }
                     else{
-                        robot_0_g = robot_0_g/(robot_0_g+ robot_1_g);
-                        robot_1_g = robot_1_g/(robot_0_g+ robot_1_g);
+                        var sum_g_values = robot_0_g+ robot_1_g;
+                        robot_0_g = robot_0_g/sum_g_values;
+                        robot_1_g = robot_1_g/sum_g_values;
+                        console.log("g values NORMALIZED = "+ robot_0_g + " , "+ robot_1_g);
+
+                        robot_0_g = 1-robot_0_g;
+                        robot_1_g = 1-robot_1_g;
+                        if (robot_0_g+ robot_1_g === 0){
+                            robot_0_g = 0.5;
+                            robot_1_g = 0.5;
+                        }
+                        else{
+                            var sum_g_values = robot_0_g+ robot_1_g;
+                            robot_0_g = robot_0_g/sum_g_values;
+                            robot_1_g = robot_1_g/sum_g_values;
+                        }
+
                     }
+                    this.weight_assignment = [robot_0_g, robot_1_g];
+                    console.log("model weights NEW probs = "+ this.weight_assignment[0] + " , "+ this.weight_assignment[1]);
+
+                    console.log("weight assignment: "+ this.weight_assignment)
+
 
                 }
-                this.weight_assignment = [robot_0_g, robot_1_g];
 
-                console.log("weight assignment: "+ this.weight_assignment)
+
+
+
 
 
 

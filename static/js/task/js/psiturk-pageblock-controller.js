@@ -99,8 +99,36 @@ export default function PageBlockController(
                 );
                 window.scrollTo($(this).position()['left'], $(this).position()['top'])
             }
+
+            else if ($(this).find("input:radio").length > 0 &&
+                    $(this).find("input:radio:checked").length > 0) {
+
+                var checked_radio = $(this).find("input:radio:checked")[0];
+
+                // console.log(checked_radio.value);
+
+                if (checked_radio.value === '1000' || checked_radio.value === 1000){
+                    console.log(checked_radio);
+                    console.log("found checked");
+                    if ($(this).find("textarea").length > 0) {
+                        var textarea = $(this).find("textarea")[0];
+                        var text = textarea.value;
+                        // console.log("found text area")
+                        // console.log(textarea);
+
+                        if (text.length == 0) {
+                            $(this).addClass("invalid-response");
+                            $(this).append(
+                                "<div class='invalid-response-text'>Response required</div>"
+                            );
+                            window.scrollTo($(this).position()['left'], $(this).position()['top'])
+                        }
+                    }
+                }
+            }
+
             //slider questions
-            if ($(this).find("input[type=range]").length > 0) {
+            else if ($(this).find("input[type=range]").length > 0) {
                 var slider = $(this).find("input[type=range]")[0];
                 if (!_.contains(slider.classList, "selected-slider")) {
                     $(this).addClass("invalid-response");
@@ -110,11 +138,13 @@ export default function PageBlockController(
                     window.scrollTo($(this).position()['left'], $(this).position()['top'])
                 }
             }
-            
+
             //text questions
-            if ($(this).find("textarea").length > 0) {
+            else if ($(this).find("textarea").length > 0) {
                 var textarea = $(this).find("textarea")[0];
+                // console.log(textarea);
                 var text = textarea.value;
+
                 if (text.length == 0) {
                     $(this).addClass("invalid-response");
                     $(this).append(
@@ -136,10 +166,17 @@ export default function PageBlockController(
                     );
                     window.scrollTo($(this).position()['left'], $(this).position()['top'])
                 }
+                else if (_.contains(this.classList, "number-required") && text > 80) {
+                    $(this).addClass("invalid-response");
+                    $(this).append(
+                        "<div class='invalid-response-text'>Response required. Age must be 18-80.</div>"
+                    );
+                    window.scrollTo($(this).position()['left'], $(this).position()['top'])
+                }
             }
 
             //required interaction
-            if ($(this).find(".no-interaction").length > 0) {
+            else if ($(this).find(".no-interaction").length > 0) {
                 var question = $(this).find(".no-interaction")[0];
                 $(this).addClass("invalid-response");
                 $(this).append(

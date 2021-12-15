@@ -42,6 +42,21 @@ export default PageBlockSurveyHandler = function (config) {
                 }
             ]
         },
+        'gender-vertical-radio': {
+            type: 'gender-vertical-radio',
+            name: 'gender-vertical-radio-default',
+            questiontext: 'Gender Vertical Radio Default',
+            hascorrect: false,
+            required: true,
+            leftalign: true,
+            options: [
+                {
+                    value: '0',
+                    optiontext: 'Option 0',
+                    correct: false
+                }
+            ]
+        },
         'horizontal-radio': {
             type: 'horizontal-radio',
             name: 'horizontal-radio-default',
@@ -122,6 +137,73 @@ export default PageBlockSurveyHandler = function (config) {
         }
     };
 
+    var add_gender_radioquestion = function (params, questiondiv) {
+        for (var i = 0; i < params.options.length; i++) {
+            var option = params.options[i];
+            var optiondiv = document.createElement('DIV');
+            if (params.type === 'gender-vertical-radio') {
+                addClass(optiondiv, "vertical-radio-option");
+            }
+            if (params.type === 'horizontal-radio') {
+                addClass(optiondiv, "horizontal-radio-option");
+            }
+
+            //input
+            var optioninput = document.createElement("INPUT");
+            optioninput.setAttribute("type", "radio");
+            optioninput.setAttribute("name", params.name);
+            optioninput.setAttribute("id", params.name+"-"+i);
+            optioninput.setAttribute("value", option.value);
+            if (option.correct) {
+                addClass(optioninput, "correct-answer")
+            }
+            optiondiv.appendChild(optioninput);
+
+            //label
+            var optionlabel = document.createElement("LABEL");
+            optionlabel.setAttribute("for", params.name+"-"+i);
+            optionlabel.innerHTML = option.optiontext;
+            optiondiv.appendChild(optionlabel);
+
+            questiondiv.appendChild(optiondiv);
+        }
+        /// ADD SELF DESCRIBE QUESTION!!!!
+        var optiondiv = document.createElement('DIV');
+        addClass(optiondiv, "vertical-radio-option");
+        //input
+        var self_describe_name = "gender";
+        var self_describe_text = "Self-describe: ";
+        var self_describe_idx = params.options.length;
+        var self_describe_val = "1000";
+
+        var optioninput = document.createElement("INPUT");
+        optioninput.setAttribute("type", "radio");
+        // optioninput.setAttribute("size", "4");
+        optioninput.setAttribute("name", self_describe_name);
+        optioninput.setAttribute("id", self_describe_name+"-"+self_describe_idx);
+        optioninput.setAttribute("value", self_describe_val);
+        optiondiv.appendChild(optioninput);
+
+        //label
+        var optionlabel = document.createElement("LABEL");
+        optionlabel.setAttribute("for", self_describe_name+"-"+self_describe_idx);
+        optionlabel.innerHTML = self_describe_text;
+        optiondiv.appendChild(optionlabel);
+
+        questiondiv.appendChild(optiondiv);
+
+        var input = document.createElement("TEXTAREA");
+        input.setAttribute("type", "text");
+        input.setAttribute("height", 1);
+        input.setAttribute("rows", 1);
+        input.setAttribute("id", self_describe_name+"-"+self_describe_idx+"-write-");
+        input.setAttribute("cols", 20);
+        optiondiv.appendChild(input);
+
+        /// FINISH SELF DESCRIBE QUESTION!!!!
+    };
+
+
     var add_textbox = function(params, questiondiv) {
         var input = document.createElement("TEXTAREA");
         input.setAttribute("rows", params.rows);
@@ -175,7 +257,8 @@ export default PageBlockSurveyHandler = function (config) {
         //set defaults
         if (
                 (params.type === 'vertical-radio') ||
-                (params.type === 'horizontal-radio')
+                (params.type === 'horizontal-radio') ||
+                (params.type === 'gender-vertical-radio')
         ){
             for (var o = 0; o < params.options; o++) {
                 params.options[o].value =
@@ -202,6 +285,9 @@ export default PageBlockSurveyHandler = function (config) {
         }
         if (params.type === 'vertical-radio') {
             add_radioquestion(params, questiondiv);
+        }
+        if (params.type === 'gender-vertical-radio') {
+            add_gender_radioquestion(params, questiondiv);
         }
         if (params.type === 'horizontal-radio') {
             add_radioquestion(params, questiondiv);

@@ -1,23 +1,89 @@
 <div id="container-instructions">
 
-    <div class="instructions well">
-        <p>
-            Thank you for your participation!
-        </p>
-    </div>
+<!--    <div class="instructions well">-->
+<!--        <p>-->
+<!--            Thank you for your participation!-->
+<!--        </p>-->
+<!--    </div>-->
+    <div class="media-body">
 
-    <hr />
+        <h1>Thank you for participating in this Overcooked study.</h1>
+        <hr />
 
-    <div class="instructionsnav">
-        <div class="row">
-            <div class="col-xs-5">
+        <div class="alert alert-warning">
+
+            <div align="left">
+            <b>In order to receive your compensation for this study, follow these instructions carefully: </b>
+            <ol>
+                <li> <b>Save the code</b> below by writing it down or copying it to a secure location. </li>
+                <li> <b>Press the button</b> below to confirm that you have saved the code. <br>This code <i>will not work</i> unless you have confirmed it. </li>
+                <li> <b>Enter your saved code</b> into the Prolific App so that we can compensate you for your time. </li>
+            </ol>
+
+            <b><u><p>Please save this code immediately, as you will <i>not</i> be able to access this page again:</p></u></b>
             </div>
-            <div class="col-xs-2">
-                <button type="button" id="next" value="next" class="btn btn-primary btn-lg continue">
-                Continue
-                </button>
-            </div>
+        <h2 id="code" style="display: block;margin-left: auto;margin-right: auto;margin-bottom: 3%;width: 50%;">0</h2>
+        </div>
+        <hr />
+
+        <div align="center">
+                    <button type="button" id="next" value="next" class="btn btn-primary btn-lg continue" onClick="window.close();">
+                        I have saved my code. Close window. <span class="glyphicon glyphicon-ok"></span>
+                    </button>
+
+                <p>Please close out of the original HIT window. </p>
+    <!--                <button type="button" id="next" value="next" onClick="window.opener.location.reload(true); window.close();" class="btn btn-primary btn-lg continue">-->
+    <!--                Continue-->
+    <!--                </button>-->
         </div>
     </div>
+
+
+
+<!--    <div class="instructionsnav">-->
+<!--        <div class="row">-->
+<!--            <div class="col-xs-5">-->
+<!--            </div>-->
+<!--                -->
+<!--        </div>-->
+<!--&lt;!&ndash;        <h2 id="code" style="display: block;margin-left: auto;margin-right: auto;margin-bottom: 3%;width: 50%;">0</h2>&ndash;&gt;-->
+
+<!--    </div>-->
+
+    <script>
+          get_survey_code = function() {
+                var today, date, time, dateTime, num;
+                today = new Date();
+            date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+                time = today.getHours() + '-' + today.getMinutes() + '-' + today.getSeconds();
+                dateTime = date+time;
+                num = Math.floor(Math.random() * 150);
+            code = dateTime + num;
+                code = code.replace(/-/g, "");
+
+                return code;
+            }
+          {#var code = get_survey_code();#}
+          var code = '460BD09A'; //from prolific
+          psiTurk.recordUnstructuredData('completion_code', code);
+          psiTurk.saveData();
+          // psiTurk.recordUnstructuredData('hitid', hitid);
+          // psiTurk.recordUnstructuredData('assignmentid', code);
+          // psiTurk.recordUnstructuredData('workerid', code);
+          // hitId={{ hitid }}&assignmentId={{ assignmentid }}&workerId={{ workerid }}
+        //   psiTurk.saveData({
+        //     success: () =>  {
+        //         clearTimeout(saving_timeout);
+        //         setTimeout(function () {
+        //             $("#next").click();
+        //         }, 2000);
+        //         $("#saving_msg").html("Your data is being saved. PLEASE WAIT – DO NOT CLOSE YOUR BROWSER");
+        //         console.log("Data sent");
+        //     }
+        // });
+
+          document.getElementById('code').innerHTML = code;
+          //document.getElementById('code_button').innerHTML = code;
+        </script>
 
 </div>
